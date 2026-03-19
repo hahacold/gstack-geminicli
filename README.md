@@ -6,12 +6,12 @@ This is a port of the original [gstack](https://github.com/garrytan/gstack) (cre
 
 ## Why gstack-geminicli?
 
-By leveraging the latest **Gemini 3.1 Pro** and **Gemini 3 Deep Think** models with gstack-geminicli, you unlock unparalleled reasoning capabilities alongside the massive **2 Million+ Token context window**. 
+The original **gstack** project was built exclusively for Claude Code. This port enables those same high-performance agentic skills to run natively within **Google Gemini CLI**, leveraging Gemini's unique architecture and massive context window.
 
-While other agents struggle with large repositories, gstack-geminicli allows the agent to:
-- **Execute "Deep Think" workflows**: Reasoning through complex bug root causes before proposing fixes.
-- **Ingest entire modules and test suites**: Leveraging the next-gen context window to maintain absolute project coherence.
-- **Perform autonomous "Agentic" tasks**: Handling multi-step engineering cycles across hundreds of files with ease.
+By bringing gstack to the Gemini platform, you can:
+- **Leverage Massive Context**: Ingest entire modules and large test suites to maintain absolute project coherence during complex refactors.
+- **Run Autonomous Workflows**: Execute deep code reviews, automated QA, and root-cause investigations directly via Gemini CLI.
+- **Cross-Platform Engineering**: Use a unified set of professional engineering skills across your entire development lifecycle.
 
 ## Installation
 
