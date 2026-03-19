@@ -1,40 +1,40 @@
-# gstack for Gemini CLI 安裝文檔
+# gstack for Gemini CLI Installation Guide
 
-gstack 是一套由 Garry Tan 定義的高級技能組，旨在將 **Google Gemini CLI** 轉化為一個具備 CEO、架構師與 QA 工程師能力的虛擬開發團隊。
-
----
-
-## 1. 前置需求
-
-在安裝之前，請確保您的系統已安裝以下工具：
-
-*   **Google Gemini CLI**: 確保已正確安裝並登入。
-*   **Bun**: gstack 的瀏覽器測試工具 (`browse`) 需要 Bun 運行環境。
-    *   安裝指令：`curl -fsSL https://bun.sh/install | bash`
-*   **Git**: 用於版本控制與代碼追蹤。
+**gstack** is a set of advanced "skills" originally defined by Garry Tan, designed to transform your **Google Gemini CLI** into a virtual development team with CEO, Architect, and QA Engineer capabilities.
 
 ---
 
-## 2. 安裝步驟
+## 1. Prerequisites
 
-### 步驟 A：建立技能目錄
-Gemini CLI 預設會從 `~/.gemini/skills` 讀取自定義技能。
+Before installation, ensure your system has the following tools:
+
+*   **Google Gemini CLI**: Properly installed and authenticated.
+*   **Bun**: Required for the gstack browser testing tool (`browse`).
+    *   Installation: `curl -fsSL https://bun.sh/install | bash`
+*   **Git**: For version control and code tracking.
+
+---
+
+## 2. Installation Steps
+
+### Step A: Create Skills Directory
+Gemini CLI reads custom skills from `~/.gemini/skills` by default.
 
 ```bash
-# 建立目錄路徑
+# Create the directory path
 mkdir -p ~/.gemini/skills/gstack
 ```
 
-### 步驟 B：將轉換後的檔案移至目標位置
-如果您已經在本地轉換好檔案，請將它們複製到上述目錄；或者直接在該目錄下進行操作：
+### Step B: Move Ported Files to Destination
+If you have already ported the files locally, copy them to the directory above:
 
 ```bash
-# 假設您目前的目錄是轉換後的 gstack_port
+# Assuming your current directory is the ported gstack_port
 cp -r * ~/.gemini/skills/gstack/
 ```
 
-### 步驟 C：執行 Setup 腳本
-gstack 需要編譯其內部的 browse 二進位檔案並配置環境。
+### Step C: Run Setup Script
+gstack needs to compile its internal `browse` binaries and configure the environment.
 
 ```bash
 cd ~/.gemini/skills/gstack
@@ -42,50 +42,50 @@ chmod +x setup
 ./setup
 ```
 
-> **注意 (Windows 用戶)**: 如果您使用 Git Bash 或 WSL，請確保在 Unix 模擬環境下執行。如果是原生 Windows 環境，請確保 `bun` 已加入環境變數。
+> **Note (Windows Users)**: If you are using Git Bash or WSL, ensure you run this in a Unix-like environment. For native Windows, ensure `bun` is added to your PATH.
 
 ---
 
-## 3. 配置 Gemini CLI
+## 3. Configuring Gemini CLI
 
-為了讓 Gemini CLI 識別這些技能，您可能需要確保路徑正確。Gemini CLI 會自動掃描 `~/.gemini/skills` 下的 `SKILL.md` 檔案。
+To ensure Gemini CLI recognizes these skills, verify the paths. Gemini CLI automatically scans for `SKILL.md` files under `~/.gemini/skills`.
 
-您可以使用以下指令檢查配置：
+You can check the configuration using:
 
 ```bash
-# 檢查目前載入的技能 (視您的 Gemini CLI 版本而定)
+# List currently loaded skills (depending on your Gemini CLI version)
 gemini skills list
 ```
 
 ---
 
-## 4. 如何使用
+## 4. How to Use
 
-安裝完成後，您可以在 Gemini CLI 會話中直接透過描述或指令調用以下功能：
+Once installed, you can invoke the following features in your Gemini CLI session via description or direct command:
 
-| 功能指令 | 角色 / 用途 |
-| :--- | :--- |
-| `/plan-ceo-review` | **CEO 模式**：審查產品策略、挑戰產品願景、擴張或精簡範疇。 |
-| `/plan-eng-review` | **工程師模式**：分析系統架構、繪製數據流圖、檢查錯誤處理。 |
-| `/qa` | **QA 模式**：啟動無頭瀏覽器測試 UI、發現 Bug 並自動修復。 |
-| `/review` | **代碼審查**：以嚴苛的 Staff Engineer 角度進行安全性與邏輯審查。 |
-| `/investigate` | **深度調查**：追蹤複雜 Bug 的根本原因。 |
-| `/ship` | **發佈模式**：準備 PR、執行最後測試、自動化發佈流程。 |
-
----
-
-## 5. 重要變更說明 (Gemini CLI 版)
-
-與原始 `garrytan/gstack` (Claude Code 版) 的不同點：
-
-1.  **路徑變更**：所有設定與二進位檔案現在位於 `~/.gemini/skills/gstack`。
-2.  **工具適配**：原本的 `Bash`, `Read`, `Edit` 指令已適配為 Gemini CLI 的 `run_shell_command`, `read_file`, `replace`。
-3.  **長文本優化**：技能指令已針對 Gemini 的 1M+ Token Context 進行調整，Agent 會傾向於讀取更多專案脈絡（如 `ARCHITECTURE.md`）來做出決策。
+| Feature/Command | Role / Purpose | Recommended Usage |
+| :--- | :--- | :--- |
+| `/plan-ceo-review` | **CEO Mode** | Review product strategy, challenge vision, expand or trim scope. |
+| `/plan-eng-review` | **Architect Mode** | Analyze system architecture, draw data flows, check error handling. |
+| `/qa` | **QA Mode** | Launch headless browser tests for UI, discover bugs, and auto-fix. |
+| `/review` | **Code Review** | Rigorous Staff Engineer-level security and logic audit. |
+| `/investigate` | **Deep Investigation** | Root-cause analysis of complex, hard-to-debug issues. |
+| `/ship` | **Ship Mode** | Prepare PRs, run final tests, and automate the release process. |
 
 ---
 
-## 故障排除
+## 5. Key Changes (Gemini CLI Version)
 
-*   **瀏覽器無法啟動**：請確認 `~/.gemini/skills/gstack/browse/dist/browse` 是否具備執行權限。
-*   **找不到技能**：請確認 `SKILL.md` 位於 `~/.gemini/skills/gstack/` 的第一層目錄中。
-*   **路徑衝突**：如果您同時安裝了 Claude Code，請注意兩者現在使用獨立的配置路徑，互不干擾。
+Differences from the original `garrytan/gstack` (Claude Code version):
+
+1.  **Path Changes**: All configurations and binaries are now located at `~/.gemini/skills/gstack`.
+2.  **Tool Adaptation**: Original `Bash`, `Read`, and `Edit` commands are adapted to Gemini CLI's `run_shell_command`, `read_file`, and `replace`.
+3.  **Context Optimization**: Skill instructions are tuned for Gemini's 1M+ Token Context, encouraging the agent to read more project context (e.g., `ARCHITECTURE.md`) for better decision-making.
+
+---
+
+## Troubleshooting
+
+*   **Browser fails to start**: Ensure `~/.gemini/skills/gstack/browse/dist/browse` has execution permissions.
+*   **Skills not found**: Ensure `SKILL.md` is in the root of `~/.gemini/skills/gstack/`.
+*   **Path Conflicts**: If you have Claude Code installed, note that these now use independent configuration paths and do not interfere with each other.
