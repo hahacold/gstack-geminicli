@@ -2,26 +2,32 @@
 name: careful
 version: 0.1.0
 description: |
+  
+  (Optimized for Gemini CLI with long-context advantages. Use your massive context window to ingest entire files and maintain deep coherence.)
+  
+  As a Google Gemini CLI Agent, you have a massive context window. Use it to ingest entire files, large test outputs, and complex architectural context without hesitation. Your long-context advantage allows you to maintain deep coherence across large-scale refactors and exhaustive QA sessions.
   Safety guardrails for destructive commands. Warns before rm -rf, DROP TABLE,
   force-push, git reset --hard, kubectl delete, and similar destructive operations.
   User can override each warning. Use when touching prod, debugging live systems,
   or working in a shared environment. Use when asked to "be careful", "safety mode",
   "prod mode", or "careful mode".
 allowed-tools:
-  - Bash
-  - Read
+  - run_shell_command
+  - read_file
 hooks:
   PreToolUse:
-    - matcher: "Bash"
+    - matcher: "run_shell_command"
       hooks:
         - type: command
-          command: "bash ${CLAUDE_SKILL_DIR}/bin/check-careful.sh"
+          command: "bash ${GEMINI_SKILL_DIR}/bin/check-careful.sh"
           statusMessage: "Checking for destructive commands..."
 ---
 <!-- AUTO-GENERATED from SKILL.md.tmpl — do not edit directly -->
 <!-- Regenerate: bun run gen:skill-docs -->
 
 # /careful — Destructive Command Guardrails
+
+(Optimized for Gemini CLI with long-context advantages)
 
 Safety mode is now **active**. Every bash command will be checked for destructive
 patterns before running. If a destructive command is detected, you'll be warned

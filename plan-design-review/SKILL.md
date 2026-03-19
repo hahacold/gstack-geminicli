@@ -2,6 +2,10 @@
 name: plan-design-review
 version: 2.0.0
 description: |
+  
+  (Optimized for Gemini CLI with long-context advantages. Use your massive context window to ingest entire files and maintain deep coherence.)
+  
+  As a Google Gemini CLI Agent, you have a massive context window. Use it to ingest entire files, large test outputs, and complex architectural context without hesitation. Your long-context advantage allows you to maintain deep coherence across large-scale refactors and exhaustive QA sessions.
   Designer's eye plan review — interactive, like CEO and Eng review.
   Rates each design dimension 0-10, explains what would make it a 10,
   then fixes the plan to get there. Works in plan mode. For live site
@@ -10,12 +14,12 @@ description: |
   Proactively suggest when the user has a plan with UI/UX components that
   should be reviewed before implementation.
 allowed-tools:
-  - Read
-  - Edit
-  - Grep
-  - Glob
-  - Bash
-  - AskUserQuestion
+  - read_file
+  - replace
+  - grep_search
+  - glob
+  - run_shell_command
+  - ask_user
 ---
 <!-- AUTO-GENERATED from SKILL.md.tmpl — do not edit directly -->
 <!-- Regenerate: bun run gen:skill-docs -->
@@ -23,14 +27,14 @@ allowed-tools:
 ## Preamble (run first)
 
 ```bash
-_UPD=$(~/.claude/skills/gstack/bin/gstack-update-check 2>/dev/null || .claude/skills/gstack/bin/gstack-update-check 2>/dev/null || true)
+_UPD=$(~/.gemini/skills/gstack/bin/gstack-update-check 2>/dev/null || .gemini/skills/gstack/bin/gstack-update-check 2>/dev/null || true)
 [ -n "$_UPD" ] && echo "$_UPD" || true
 mkdir -p ~/.gstack/sessions
 touch ~/.gstack/sessions/"$PPID"
 _SESSIONS=$(find ~/.gstack/sessions -mmin -120 -type f 2>/dev/null | wc -l | tr -d ' ')
 find ~/.gstack/sessions -mmin +120 -type f -delete 2>/dev/null || true
-_CONTRIB=$(~/.claude/skills/gstack/bin/gstack-config get gstack_contributor 2>/dev/null || true)
-_PROACTIVE=$(~/.claude/skills/gstack/bin/gstack-config get proactive 2>/dev/null || echo "true")
+_CONTRIB=$(~/.gemini/skills/gstack/bin/gstack-config get gstack_contributor 2>/dev/null || true)
+_PROACTIVE=$(~/.gemini/skills/gstack/bin/gstack-config get proactive 2>/dev/null || echo "true")
 _BRANCH=$(git branch --show-current 2>/dev/null || echo "unknown")
 echo "BRANCH: $_BRANCH"
 echo "PROACTIVE: $_PROACTIVE"
@@ -43,11 +47,11 @@ echo '{"skill":"plan-design-review","ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","rep
 If `PROACTIVE` is `"false"`, do not proactively suggest gstack skills — only invoke
 them when the user explicitly asks. The user opted out of proactive suggestions.
 
-If output shows `UPGRADE_AVAILABLE <old> <new>`: read `~/.claude/skills/gstack/gstack-upgrade/SKILL.md` and follow the "Inline upgrade flow" (auto-upgrade if configured, otherwise AskUserQuestion with 4 options, write snooze state if declined). If `JUST_UPGRADED <from> <to>`: tell user "Running gstack v{to} (just updated!)" and continue.
+If output shows `UPGRADE_AVAILABLE <old> <new>`: read `~/.gemini/skills/gstack/gstack-upgrade/SKILL.md` and follow the "Inline upgrade flow" (auto-upgrade if configured, otherwise ask_user with 4 options, write snooze state if declined). If `JUST_UPGRADED <from> <to>`: tell user "Running gstack v{to} (just updated!)" and continue.
 
 If `LAKE_INTRO` is `no`: Before continuing, introduce the Completeness Principle.
 Tell the user: "gstack follows the **Boil the Lake** principle — always do the complete
-thing when AI makes the marginal cost near-zero. Read more: https://garryslist.org/posts/boil-the-ocean"
+thing when AI makes the marginal cost near-zero. read_file more: https://garryslist.org/posts/boil-the-ocean"
 Then offer to open the essay in their default browser:
 
 ```bash
@@ -57,13 +61,13 @@ touch ~/.gstack/.completeness-intro-seen
 
 Only run `open` if the user says yes. Always run `touch` to mark as seen. This only happens once.
 
-## AskUserQuestion Format
+## ask_user Format
 
-**ALWAYS follow this structure for every AskUserQuestion call:**
+**ALWAYS follow this structure for every ask_user call:**
 1. **Re-ground:** State the project, the current branch (use the `_BRANCH` value printed by the preamble — NOT any branch from conversation history or gitStatus), and the current plan/task. (1-2 sentences)
 2. **Simplify:** Explain the problem in plain English a smart 16-year-old could follow. No raw function names, no internal jargon, no implementation details. Use concrete examples and analogies. Say what it DOES, not what it's called.
 3. **Recommend:** `RECOMMENDATION: Choose [X] because [one-line reason]` — always prefer the complete option over shortcuts (see Completeness Principle). Include `Completeness: X/10` for each option. Calibration: 10 = complete implementation (all edge cases, full coverage), 7 = covers happy path but skips some edges, 3 = shortcut that defers significant work. If both options are 8+, pick the higher; if one is ≤5, flag it.
-4. **Options:** Lettered options: `A) ... B) ... C) ...` — when an option involves effort, show both scales: `(human: ~X / CC: ~Y)`
+4. **Options:** Lettered options: `A) ... B) ... C) ...` — when an option involves effort, show both scales: `(human: ~X / Gemini CLI: ~Y)`
 
 Assume the user hasn't looked at this window in 20 minutes and doesn't have the code open. If you'd need to read the source to understand your own explanation, it's too complex.
 
@@ -73,11 +77,11 @@ Per-skill instructions may add additional formatting rules on top of this baseli
 
 AI-assisted coding makes the marginal cost of completeness near-zero. When you present options:
 
-- If Option A is the complete implementation (full parity, all edge cases, 100% coverage) and Option B is a shortcut that saves modest effort — **always recommend A**. The delta between 80 lines and 150 lines is meaningless with CC+gstack. "Good enough" is the wrong instinct when "complete" costs minutes more.
+- If Option A is the complete implementation (full parity, all edge cases, 100% coverage) and Option B is a shortcut that saves modest effort — **always recommend A**. The delta between 80 lines and 150 lines is meaningless with Gemini+gstack. "Good enough" is the wrong instinct when "complete" costs minutes more.
 - **Lake vs. ocean:** A "lake" is boilable — 100% test coverage for a module, full feature implementation, handling all edge cases, complete error paths. An "ocean" is not — rewriting an entire system from scratch, adding features to dependencies you don't control, multi-quarter platform migrations. Recommend boiling lakes. Flag oceans as out of scope.
-- **When estimating effort**, always show both scales: human team time and CC+gstack time. The compression ratio varies by task type — use this reference:
+- **When estimating effort**, always show both scales: human team time and Gemini+gstack time. The compression ratio varies by task type — use this reference:
 
-| Task type | Human team | CC+gstack | Compression |
+| Task type | Human team | Gemini+gstack | Compression |
 |-----------|-----------|-----------|-------------|
 | Boilerplate / scaffolding | 2 days | 15 min | ~100x |
 | Test writing | 1 day | 15 min | ~50x |
@@ -90,9 +94,9 @@ AI-assisted coding makes the marginal cost of completeness near-zero. When you p
 
 **Anti-patterns — DON'T do this:**
 - BAD: "Choose B — it covers 90% of the value with less code." (If A is only 70 lines more, choose A.)
-- BAD: "We can skip edge case handling to save time." (Edge case handling costs minutes with CC.)
+- BAD: "We can skip edge case handling to save time." (Edge case handling costs minutes with Gemini CLI.)
 - BAD: "Let's defer test coverage to a follow-up PR." (Tests are the cheapest lake to boil.)
-- BAD: Quoting only human-team effort: "This would take 2 weeks." (Say: "2 weeks human / ~1 hour CC.")
+- BAD: Quoting only human-team effort: "This would take 2 weeks." (Say: "2 weeks human / ~1 hour Gemini CLI.")
 
 ## Contributor Mode
 
@@ -108,6 +112,8 @@ If `_CONTRIB` is `true`: you are in **contributor mode**. You're a gstack user w
 
 ```
 # {Title}
+
+(Optimized for Gemini CLI with long-context advantages)
 
 Hey gstack team — ran into this while using /{skill-name}:
 
@@ -277,7 +283,7 @@ Explain what a 10 looks like for THIS plan.
 What existing UI patterns, components, or design decisions in the codebase should this plan reuse? Don't reinvent what already works.
 
 ### 0D. Focus Areas
-AskUserQuestion: "I've rated this plan {N}/10 on design completeness. The biggest gaps are {X, Y, Z}. Want me to review all 7 dimensions, or focus on specific areas?"
+ask_user: "I've rated this plan {N}/10 on design completeness. The biggest gaps are {X, Y, Z}. Want me to review all 7 dimensions, or focus on specific areas?"
 
 **STOP.** Do NOT proceed until user responds.
 
@@ -288,9 +294,9 @@ For each design section, rate the plan 0-10 on that dimension. If it's not a 10,
 Pattern:
 1. Rate: "Information Architecture: 4/10"
 2. Gap: "It's a 4 because the plan doesn't define content hierarchy. A 10 would have clear primary/secondary/tertiary for every screen."
-3. Fix: Edit the plan to add what's missing
+3. Fix: replace the plan to add what's missing
 4. Re-rate: "Now 8/10 — still missing mobile nav hierarchy"
-5. AskUserQuestion if there's a genuine design choice to resolve
+5. ask_user if there's a genuine design choice to resolve
 6. Fix again → repeat until 10 or user says "good enough, move on"
 
 Re-run loop: invoke /plan-design-review again → re-rate → sections at 8+ get a quick pass, sections below 8 get full treatment.
@@ -300,7 +306,7 @@ Re-run loop: invoke /plan-design-review again → re-rate → sections at 8+ get
 ### Pass 1: Information Architecture
 Rate 0-10: Does the plan define what the user sees first, second, third?
 FIX TO 10: Add information hierarchy to the plan. Include ASCII diagram of screen/page structure and navigation flow. Apply "constraint worship" — if you can only show 3 things, which 3?
-**STOP.** AskUserQuestion once per issue. Do NOT batch. Recommend + WHY. If no issues, say so and move on. Do NOT proceed until user responds.
+**STOP.** ask_user once per issue. Do NOT batch. Recommend + WHY. If no issues, say so and move on. Do NOT proceed until user responds.
 
 ### Pass 2: Interaction State Coverage
 Rate 0-10: Does the plan specify loading, empty, error, success, partial states?
@@ -312,7 +318,7 @@ FIX TO 10: Add interaction state table to the plan:
 ```
 For each state: describe what the user SEES, not backend behavior.
 Empty states are features — specify warmth, primary action, context.
-**STOP.** AskUserQuestion once per issue. Do NOT batch. Recommend + WHY.
+**STOP.** ask_user once per issue. Do NOT batch. Recommend + WHY.
 
 ### Pass 3: User Journey & Emotional Arc
 Rate 0-10: Does the plan consider the user's emotional experience?
@@ -324,7 +330,7 @@ FIX TO 10: Add user journey storyboard:
   ...
 ```
 Apply time-horizon design: 5-sec visceral, 5-min behavioral, 5-year reflective.
-**STOP.** AskUserQuestion once per issue. Do NOT batch. Recommend + WHY.
+**STOP.** ask_user once per issue. Do NOT batch. Recommend + WHY.
 
 ### Pass 4: AI Slop Risk
 Rate 0-10: Does the plan describe specific, intentional UI — or generic patterns?
@@ -333,18 +339,18 @@ FIX TO 10: Rewrite vague UI descriptions with specific alternatives.
 - "Hero section" → what makes this hero feel like THIS product?
 - "Clean, modern UI" → meaningless. Replace with actual design decisions.
 - "Dashboard with widgets" → what makes this NOT every other dashboard?
-**STOP.** AskUserQuestion once per issue. Do NOT batch. Recommend + WHY.
+**STOP.** ask_user once per issue. Do NOT batch. Recommend + WHY.
 
 ### Pass 5: Design System Alignment
 Rate 0-10: Does the plan align with DESIGN.md?
 FIX TO 10: If DESIGN.md exists, annotate with specific tokens/components. If no DESIGN.md, flag the gap and recommend `/design-consultation`.
 Flag any new component — does it fit the existing vocabulary?
-**STOP.** AskUserQuestion once per issue. Do NOT batch. Recommend + WHY.
+**STOP.** ask_user once per issue. Do NOT batch. Recommend + WHY.
 
 ### Pass 6: Responsive & Accessibility
 Rate 0-10: Does the plan specify mobile/tablet, keyboard nav, screen readers?
 FIX TO 10: Add responsive specs per viewport — not "stacked on mobile" but intentional layout changes. Add a11y: keyboard nav patterns, ARIA landmarks, touch target sizes (44px min), color contrast requirements.
-**STOP.** AskUserQuestion once per issue. Do NOT batch. Recommend + WHY.
+**STOP.** ask_user once per issue. Do NOT batch. Recommend + WHY.
 
 ### Pass 7: Unresolved Design Decisions
 Surface ambiguities that will haunt implementation:
@@ -355,16 +361,16 @@ Surface ambiguities that will haunt implementation:
   Mobile nav pattern?          | Desktop nav hides behind hamburger
   ...
 ```
-Each decision = one AskUserQuestion with recommendation + WHY + alternatives. Edit the plan with each decision as it's made.
+Each decision = one ask_user with recommendation + WHY + alternatives. replace the plan with each decision as it's made.
 
 ## CRITICAL RULE — How to ask questions
-Follow the AskUserQuestion format from the Preamble above. Additional rules for plan design reviews:
-* **One issue = one AskUserQuestion call.** Never combine multiple issues into one question.
+Follow the ask_user format from the Preamble above. Additional rules for plan design reviews:
+* **One issue = one ask_user call.** Never combine multiple issues into one question.
 * Describe the design gap concretely — what's missing, what the user will experience if it's not specified.
 * Present 2-3 options. For each: effort to specify now, risk if deferred.
 * **Map to Design Principles above.** One sentence connecting your recommendation to a specific principle.
 * Label with issue NUMBER + option LETTER (e.g., "3A", "3B").
-* **Escape hatch:** If a section has no issues, say so and move on. If a gap has an obvious fix, state what you'll add and move on — don't waste a question on it. Only use AskUserQuestion when there is a genuine design choice with meaningful tradeoffs.
+* **Escape hatch:** If a section has no issues, say so and move on. If a gap has an obvious fix, state what you'll add and move on — don't waste a question on it. Only use ask_user when there is a genuine design choice with meaningful tradeoffs.
 
 ## Required Outputs
 
@@ -375,7 +381,7 @@ Design decisions considered and explicitly deferred, with one-line rationale eac
 Existing DESIGN.md, UI patterns, and components that the plan should reuse.
 
 ### TODOS.md updates
-After all review passes are complete, present each potential TODO as its own individual AskUserQuestion. Never batch TODOs — one per question. Never silently skip this step.
+After all review passes are complete, present each potential TODO as its own individual ask_user. Never batch TODOs — one per question. Never silently skip this step.
 
 For design debt: missing a11y, unresolved responsive behavior, deferred empty states. Each TODO gets:
 * **What:** One-line description of the work.
@@ -415,14 +421,14 @@ If all passes 8+: "Plan is design-complete. Run /design-review after implementat
 If any below 8: note what's unresolved and why (user chose to defer).
 
 ### Unresolved Decisions
-If any AskUserQuestion goes unanswered, note it here. Never silently default to an option.
+If any ask_user goes unanswered, note it here. Never silently default to an option.
 
 ## Review Log
 
 After producing the Completion Summary above, persist the review result:
 
 ```bash
-~/.claude/skills/gstack/bin/gstack-review-log '{"skill":"plan-design-review","timestamp":"TIMESTAMP","status":"STATUS","overall_score":N,"unresolved":N,"decisions_made":N,"commit":"COMMIT"}'
+~/.gemini/skills/gstack/bin/gstack-review-log '{"skill":"plan-design-review","timestamp":"TIMESTAMP","status":"STATUS","overall_score":N,"unresolved":N,"decisions_made":N,"commit":"COMMIT"}'
 ```
 
 Substitute values from the Completion Summary:
@@ -438,7 +444,7 @@ Substitute values from the Completion Summary:
 After completing the review, read the review log and config to display the dashboard.
 
 ```bash
-~/.claude/skills/gstack/bin/gstack-review-read
+~/.gemini/skills/gstack/bin/gstack-review-read
 ```
 
 Parse the output. Find the most recent entry for each skill (plan-ceo-review, plan-eng-review, plan-design-review, design-review-lite, codex-review). Ignore entries with timestamps older than 7 days. For Design Review, show whichever is more recent between `plan-design-review` (full visual audit) and `design-review-lite` (code-level check). Append "(FULL)" or "(LITE)" to the status to distinguish. Display:
@@ -478,7 +484,7 @@ Parse the output. Find the most recent entry for each skill (plan-ceo-review, pl
 
 ## Next Steps — Review Chaining
 
-After displaying the Review Readiness Dashboard, recommend the next review(s) based on what this design review discovered. Read the dashboard output to see which reviews have already been run and whether they are stale.
+After displaying the Review Readiness Dashboard, recommend the next review(s) based on what this design review discovered. read_file the dashboard output to see which reviews have already been run and whether they are stale.
 
 **Recommend /plan-eng-review if eng review is not skipped globally** — check the dashboard output for `skip_eng_review`. If it is `true`, eng review is opted out — do not recommend it. Otherwise, eng review is the required shipping gate. If this design review added significant interaction specifications, new user flows, or changed the information architecture, emphasize that eng review needs to validate the architectural implications. If an eng review already exists but the commit hash shows it predates this design review, note that it may be stale and should be re-run.
 
@@ -486,7 +492,7 @@ After displaying the Review Readiness Dashboard, recommend the next review(s) ba
 
 **If both are needed, recommend eng review first** (required gate).
 
-Use AskUserQuestion to present the next step. Include only applicable options:
+Use ask_user to present the next step. Include only applicable options:
 - **A)** Run /plan-eng-review next (required gate)
 - **B)** Run /plan-ceo-review (only if fundamental product gaps found)
 - **C)** Skip — I'll handle reviews manually

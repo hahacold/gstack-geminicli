@@ -2,19 +2,23 @@
 name: document-release
 version: 1.0.0
 description: |
+  
+  (Optimized for Gemini CLI with long-context advantages. Use your massive context window to ingest entire files and maintain deep coherence.)
+  
+  As a Google Gemini CLI Agent, you have a massive context window. Use it to ingest entire files, large test outputs, and complex architectural context without hesitation. Your long-context advantage allows you to maintain deep coherence across large-scale refactors and exhaustive QA sessions.
   Post-ship documentation update. Reads all project docs, cross-references the
   diff, updates README/ARCHITECTURE/CONTRIBUTING/CLAUDE.md to match what shipped,
   polishes CHANGELOG voice, cleans up TODOS, and optionally bumps VERSION. Use when
   asked to "update the docs", "sync documentation", or "post-ship docs".
   Proactively suggest after a PR is merged or code is shipped.
 allowed-tools:
-  - Bash
-  - Read
-  - Write
-  - Edit
-  - Grep
-  - Glob
-  - AskUserQuestion
+  - run_shell_command
+  - read_file
+  - write_file
+  - replace
+  - grep_search
+  - glob
+  - ask_user
 ---
 <!-- AUTO-GENERATED from SKILL.md.tmpl — do not edit directly -->
 <!-- Regenerate: bun run gen:skill-docs -->
@@ -22,14 +26,14 @@ allowed-tools:
 ## Preamble (run first)
 
 ```bash
-_UPD=$(~/.claude/skills/gstack/bin/gstack-update-check 2>/dev/null || .claude/skills/gstack/bin/gstack-update-check 2>/dev/null || true)
+_UPD=$(~/.gemini/skills/gstack/bin/gstack-update-check 2>/dev/null || .gemini/skills/gstack/bin/gstack-update-check 2>/dev/null || true)
 [ -n "$_UPD" ] && echo "$_UPD" || true
 mkdir -p ~/.gstack/sessions
 touch ~/.gstack/sessions/"$PPID"
 _SESSIONS=$(find ~/.gstack/sessions -mmin -120 -type f 2>/dev/null | wc -l | tr -d ' ')
 find ~/.gstack/sessions -mmin +120 -type f -delete 2>/dev/null || true
-_CONTRIB=$(~/.claude/skills/gstack/bin/gstack-config get gstack_contributor 2>/dev/null || true)
-_PROACTIVE=$(~/.claude/skills/gstack/bin/gstack-config get proactive 2>/dev/null || echo "true")
+_CONTRIB=$(~/.gemini/skills/gstack/bin/gstack-config get gstack_contributor 2>/dev/null || true)
+_PROACTIVE=$(~/.gemini/skills/gstack/bin/gstack-config get proactive 2>/dev/null || echo "true")
 _BRANCH=$(git branch --show-current 2>/dev/null || echo "unknown")
 echo "BRANCH: $_BRANCH"
 echo "PROACTIVE: $_PROACTIVE"
@@ -42,11 +46,11 @@ echo '{"skill":"document-release","ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","repo"
 If `PROACTIVE` is `"false"`, do not proactively suggest gstack skills — only invoke
 them when the user explicitly asks. The user opted out of proactive suggestions.
 
-If output shows `UPGRADE_AVAILABLE <old> <new>`: read `~/.claude/skills/gstack/gstack-upgrade/SKILL.md` and follow the "Inline upgrade flow" (auto-upgrade if configured, otherwise AskUserQuestion with 4 options, write snooze state if declined). If `JUST_UPGRADED <from> <to>`: tell user "Running gstack v{to} (just updated!)" and continue.
+If output shows `UPGRADE_AVAILABLE <old> <new>`: read `~/.gemini/skills/gstack/gstack-upgrade/SKILL.md` and follow the "Inline upgrade flow" (auto-upgrade if configured, otherwise ask_user with 4 options, write snooze state if declined). If `JUST_UPGRADED <from> <to>`: tell user "Running gstack v{to} (just updated!)" and continue.
 
 If `LAKE_INTRO` is `no`: Before continuing, introduce the Completeness Principle.
 Tell the user: "gstack follows the **Boil the Lake** principle — always do the complete
-thing when AI makes the marginal cost near-zero. Read more: https://garryslist.org/posts/boil-the-ocean"
+thing when AI makes the marginal cost near-zero. read_file more: https://garryslist.org/posts/boil-the-ocean"
 Then offer to open the essay in their default browser:
 
 ```bash
@@ -56,13 +60,13 @@ touch ~/.gstack/.completeness-intro-seen
 
 Only run `open` if the user says yes. Always run `touch` to mark as seen. This only happens once.
 
-## AskUserQuestion Format
+## ask_user Format
 
-**ALWAYS follow this structure for every AskUserQuestion call:**
+**ALWAYS follow this structure for every ask_user call:**
 1. **Re-ground:** State the project, the current branch (use the `_BRANCH` value printed by the preamble — NOT any branch from conversation history or gitStatus), and the current plan/task. (1-2 sentences)
 2. **Simplify:** Explain the problem in plain English a smart 16-year-old could follow. No raw function names, no internal jargon, no implementation details. Use concrete examples and analogies. Say what it DOES, not what it's called.
 3. **Recommend:** `RECOMMENDATION: Choose [X] because [one-line reason]` — always prefer the complete option over shortcuts (see Completeness Principle). Include `Completeness: X/10` for each option. Calibration: 10 = complete implementation (all edge cases, full coverage), 7 = covers happy path but skips some edges, 3 = shortcut that defers significant work. If both options are 8+, pick the higher; if one is ≤5, flag it.
-4. **Options:** Lettered options: `A) ... B) ... C) ...` — when an option involves effort, show both scales: `(human: ~X / CC: ~Y)`
+4. **Options:** Lettered options: `A) ... B) ... C) ...` — when an option involves effort, show both scales: `(human: ~X / Gemini CLI: ~Y)`
 
 Assume the user hasn't looked at this window in 20 minutes and doesn't have the code open. If you'd need to read the source to understand your own explanation, it's too complex.
 
@@ -72,11 +76,11 @@ Per-skill instructions may add additional formatting rules on top of this baseli
 
 AI-assisted coding makes the marginal cost of completeness near-zero. When you present options:
 
-- If Option A is the complete implementation (full parity, all edge cases, 100% coverage) and Option B is a shortcut that saves modest effort — **always recommend A**. The delta between 80 lines and 150 lines is meaningless with CC+gstack. "Good enough" is the wrong instinct when "complete" costs minutes more.
+- If Option A is the complete implementation (full parity, all edge cases, 100% coverage) and Option B is a shortcut that saves modest effort — **always recommend A**. The delta between 80 lines and 150 lines is meaningless with Gemini+gstack. "Good enough" is the wrong instinct when "complete" costs minutes more.
 - **Lake vs. ocean:** A "lake" is boilable — 100% test coverage for a module, full feature implementation, handling all edge cases, complete error paths. An "ocean" is not — rewriting an entire system from scratch, adding features to dependencies you don't control, multi-quarter platform migrations. Recommend boiling lakes. Flag oceans as out of scope.
-- **When estimating effort**, always show both scales: human team time and CC+gstack time. The compression ratio varies by task type — use this reference:
+- **When estimating effort**, always show both scales: human team time and Gemini+gstack time. The compression ratio varies by task type — use this reference:
 
-| Task type | Human team | CC+gstack | Compression |
+| Task type | Human team | Gemini+gstack | Compression |
 |-----------|-----------|-----------|-------------|
 | Boilerplate / scaffolding | 2 days | 15 min | ~100x |
 | Test writing | 1 day | 15 min | ~50x |
@@ -89,9 +93,9 @@ AI-assisted coding makes the marginal cost of completeness near-zero. When you p
 
 **Anti-patterns — DON'T do this:**
 - BAD: "Choose B — it covers 90% of the value with less code." (If A is only 70 lines more, choose A.)
-- BAD: "We can skip edge case handling to save time." (Edge case handling costs minutes with CC.)
+- BAD: "We can skip edge case handling to save time." (Edge case handling costs minutes with Gemini CLI.)
 - BAD: "Let's defer test coverage to a follow-up PR." (Tests are the cheapest lake to boil.)
-- BAD: Quoting only human-team effort: "This would take 2 weeks." (Say: "2 weeks human / ~1 hour CC.")
+- BAD: Quoting only human-team effort: "This would take 2 weeks." (Say: "2 weeks human / ~1 hour Gemini CLI.")
 
 ## Contributor Mode
 
@@ -107,6 +111,8 @@ If `_CONTRIB` is `true`: you are in **contributor mode**. You're a gstack user w
 
 ```
 # {Title}
+
+(Optimized for Gemini CLI with long-context advantages)
 
 Hey gstack team — ran into this while using /{skill-name}:
 
@@ -200,8 +206,8 @@ subjective decisions.
 
 **NEVER do:**
 - Overwrite, replace, or regenerate CHANGELOG entries — polish wording only, preserve all content
-- Bump VERSION without asking — always use AskUserQuestion for version changes
-- Use `Write` tool on CHANGELOG.md — always use `Edit` with exact `old_string` matches
+- Bump VERSION without asking — always use ask_user for version changes
+- Use `write_file` tool on CHANGELOG.md — always use `replace` with exact `old_string` matches
 
 ---
 
@@ -241,7 +247,7 @@ find . -maxdepth 2 -name "*.md" -not -path "./.git/*" -not -path "./node_modules
 
 ## Step 2: Per-File Documentation Audit
 
-Read each documentation file and cross-reference it against the diff. Use these generic heuristics
+read_file each documentation file and cross-reference it against the diff. Use these generic heuristics
 (adapt to whatever project you're in — these are not gstack-specific):
 
 **README.md:**
@@ -269,7 +275,7 @@ Read each documentation file and cross-reference it against the diff. Use these 
 - Do build/test instructions match what's in package.json (or equivalent)?
 
 **Any other .md files:**
-- Read the file, determine its purpose and audience.
+- read_file the file, determine its purpose and audience.
 - Cross-reference against the diff to check if it contradicts anything the file says.
 
 For each file, classify needed updates as:
@@ -283,7 +289,7 @@ For each file, classify needed updates as:
 
 ## Step 3: Apply Auto-Updates
 
-Make all clear, factual updates directly using the Edit tool.
+Make all clear, factual updates directly using the replace tool.
 
 For each file modified, output a one-line summary describing **what specifically changed** — not
 just "Updated README.md" but "README.md: added /new-skill to skills table, updated skill count
@@ -299,7 +305,7 @@ from 9 to 10."
 
 ## Step 4: Ask About Risky/Questionable Changes
 
-For each risky or questionable update identified in Step 2, use AskUserQuestion with:
+For each risky or questionable update identified in Step 2, use ask_user with:
 - Context: project name, branch, which doc file, what we're reviewing
 - The specific documentation decision
 - `RECOMMENDATION: Choose [X] because [one-line reason]`
@@ -319,13 +325,13 @@ A real incident occurred where an agent replaced existing CHANGELOG entries when
 preserved them. This skill must NEVER do that.
 
 **Rules:**
-1. Read the entire CHANGELOG.md first. Understand what is already there.
+1. read_file the entire CHANGELOG.md first. Understand what is already there.
 2. Only modify wording within existing entries. Never delete, reorder, or replace entries.
 3. Never regenerate a CHANGELOG entry from scratch. The entry was written by `/ship` from the
    actual diff and commit history. It is the source of truth. You are polishing prose, not
    rewriting history.
-4. If an entry looks wrong or incomplete, use AskUserQuestion — do NOT silently fix it.
-5. Use Edit tool with exact `old_string` matches — never use Write to overwrite CHANGELOG.md.
+4. If an entry looks wrong or incomplete, use ask_user — do NOT silently fix it.
+5. Use replace tool with exact `old_string` matches — never use write_file to overwrite CHANGELOG.md.
 
 **If CHANGELOG was not modified in this branch:** skip this step.
 
@@ -337,7 +343,7 @@ preserved them. This skill must NEVER do that.
 - "You can now..." not "Refactored the..."
 - Flag and rewrite any entry that reads like a commit message.
 - Internal/contributor changes belong in a separate "### For contributors" subsection.
-- Auto-fix minor voice adjustments. Use AskUserQuestion if a rewrite would alter meaning.
+- Auto-fix minor voice adjustments. Use ask_user if a rewrite would alter meaning.
 
 ---
 
@@ -352,13 +358,13 @@ After auditing each file individually, do a cross-doc consistency pass:
    ARCHITECTURE.md exists but neither README nor CLAUDE.md links to it, flag it. Every doc
    should be discoverable from one of the two entry-point files.
 5. Flag any contradictions between documents. Auto-fix clear factual inconsistencies (e.g., a
-   version mismatch). Use AskUserQuestion for narrative contradictions.
+   version mismatch). Use ask_user for narrative contradictions.
 
 ---
 
 ## Step 7: TODOS.md Cleanup
 
-This is a second pass that complements `/ship`'s Step 5.5. Read `review/TODOS-format.md` (if
+This is a second pass that complements `/ship`'s Step 5.5. read_file `review/TODOS-format.md` (if
 available) for the canonical TODO item format.
 
 If TODOS.md does not exist, skip this step.
@@ -369,12 +375,12 @@ If TODOS.md does not exist, skip this step.
    evidence in the diff.
 
 2. **Items needing description updates:** If a TODO references files or components that were
-   significantly changed, its description may be stale. Use AskUserQuestion to confirm whether
+   significantly changed, its description may be stale. Use ask_user to confirm whether
    the TODO should be updated, completed, or left as-is.
 
 3. **New deferred work:** Check the diff for `TODO`, `FIXME`, `HACK`, and `XXX` comments. For
    each one that represents meaningful deferred work (not a trivial inline note), use
-   AskUserQuestion to ask whether it should be captured in TODOS.md.
+   ask_user to ask whether it should be captured in TODOS.md.
 
 ---
 
@@ -390,7 +396,7 @@ If TODOS.md does not exist, skip this step.
 git diff <base>...HEAD -- VERSION
 ```
 
-3. **If VERSION was NOT bumped:** Use AskUserQuestion:
+3. **If VERSION was NOT bumped:** Use ask_user:
    - RECOMMENDATION: Choose C (Skip) because docs-only changes rarely warrant a version bump
    - A) Bump PATCH (X.Y.Z+1) — if doc changes ship alongside code changes
    - B) Bump MINOR (X.Y+1.0) — if this is a significant standalone release
@@ -399,13 +405,13 @@ git diff <base>...HEAD -- VERSION
 4. **If VERSION was already bumped:** Do NOT skip silently. Instead, check whether the bump
    still covers the full scope of changes on this branch:
 
-   a. Read the CHANGELOG entry for the current VERSION. What features does it describe?
-   b. Read the full diff (`git diff <base>...HEAD --stat` and `git diff <base>...HEAD --name-only`).
+   a. read_file the CHANGELOG entry for the current VERSION. What features does it describe?
+   b. read_file the full diff (`git diff <base>...HEAD --stat` and `git diff <base>...HEAD --name-only`).
       Are there significant changes (new features, new skills, new commands, major refactors)
       that are NOT mentioned in the CHANGELOG entry for the current version?
    c. **If the CHANGELOG entry covers everything:** Skip — output "VERSION: Already bumped to
       vX.Y.Z, covers all changes."
-   d. **If there are significant uncovered changes:** Use AskUserQuestion explaining what the
+   d. **If there are significant uncovered changes:** Use ask_user explaining what the
       current version covers vs what's new, and ask:
       - RECOMMENDATION: Choose A because the new changes warrant their own version
       - A) Bump to next patch (X.Y.Z+1) — give the new changes their own version
@@ -432,7 +438,7 @@ committing.
 git commit -m "$(cat <<'EOF'
 docs: update project documentation for vX.Y.Z.W
 
-Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
+Co-Authored-By: Gemini Gemini 1.5 Pro 4.6 <noreply@anthropic.com>
 EOF
 )"
 ```
@@ -445,7 +451,7 @@ git push
 
 **PR body update (idempotent, race-safe):**
 
-1. Read the existing PR body into a PID-unique tempfile:
+1. read_file the existing PR body into a PID-unique tempfile:
 
 ```bash
 gh pr view --json body -q .body > /tmp/gstack-pr-body-$$.md
@@ -458,7 +464,7 @@ gh pr view --json body -q .body > /tmp/gstack-pr-body-$$.md
    describe what specifically changed (e.g., "README.md: added /document-release to skills
    table, updated skill count from 9 to 10").
 
-4. Write the updated body back:
+4. write_file the updated body back:
 
 ```bash
 gh pr edit --body-file /tmp/gstack-pr-body-$$.md
@@ -500,11 +506,11 @@ Where status is one of:
 
 ## Important Rules
 
-- **Read before editing.** Always read the full content of a file before modifying it.
+- **read_file before editing.** Always read the full content of a file before modifying it.
 - **Never clobber CHANGELOG.** Polish wording only. Never delete, replace, or regenerate entries.
 - **Never bump VERSION silently.** Always ask. Even if already bumped, check whether it covers the full scope of changes.
 - **Be explicit about what changed.** Every edit gets a one-line summary.
 - **Generic heuristics, not project-specific.** The audit checks work on any repo.
 - **Discoverability matters.** Every doc file should be reachable from README or CLAUDE.md.
-- **Voice: friendly, user-forward, not obscure.** Write like you're explaining to a smart person
+- **Voice: friendly, user-forward, not obscure.** write_file like you're explaining to a smart person
   who hasn't seen the code.

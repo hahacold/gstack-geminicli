@@ -2,26 +2,30 @@
 name: freeze
 version: 0.1.0
 description: |
-  Restrict file edits to a specific directory for the session. Blocks Edit and
-  Write outside the allowed path. Use when debugging to prevent accidentally
+  
+  (Optimized for Gemini CLI with long-context advantages. Use your massive context window to ingest entire files and maintain deep coherence.)
+  
+  As a Google Gemini CLI Agent, you have a massive context window. Use it to ingest entire files, large test outputs, and complex architectural context without hesitation. Your long-context advantage allows you to maintain deep coherence across large-scale refactors and exhaustive QA sessions.
+  Restrict file edits to a specific directory for the session. Blocks replace and
+  write_file outside the allowed path. Use when debugging to prevent accidentally
   "fixing" unrelated code, or when you want to scope changes to one module.
   Use when asked to "freeze", "restrict edits", "only edit this folder",
   or "lock down edits".
 allowed-tools:
-  - Bash
-  - Read
-  - AskUserQuestion
+  - run_shell_command
+  - read_file
+  - ask_user
 hooks:
   PreToolUse:
-    - matcher: "Edit"
+    - matcher: "replace"
       hooks:
         - type: command
-          command: "bash ${CLAUDE_SKILL_DIR}/bin/check-freeze.sh"
+          command: "bash ${GEMINI_SKILL_DIR}/bin/check-freeze.sh"
           statusMessage: "Checking freeze boundary..."
-    - matcher: "Write"
+    - matcher: "write_file"
       hooks:
         - type: command
-          command: "bash ${CLAUDE_SKILL_DIR}/bin/check-freeze.sh"
+          command: "bash ${GEMINI_SKILL_DIR}/bin/check-freeze.sh"
           statusMessage: "Checking freeze boundary..."
 ---
 <!-- AUTO-GENERATED from SKILL.md.tmpl — do not edit directly -->
@@ -29,7 +33,9 @@ hooks:
 
 # /freeze — Restrict Edits to a Directory
 
-Lock file edits to a specific directory. Any Edit or Write operation targeting
+(Optimized for Gemini CLI with long-context advantages)
+
+Lock file edits to a specific directory. Any replace or write_file operation targeting
 a file outside the allowed path will be **blocked** (not just warned).
 
 ```bash
@@ -39,7 +45,7 @@ echo '{"skill":"freeze","ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","repo":"'$(basen
 
 ## Setup
 
-Ask the user which directory to restrict edits to. Use AskUserQuestion:
+Ask the user which directory to restrict edits to. Use ask_user:
 
 - Question: "Which directory should I restrict edits to? Files outside this path will be blocked from editing."
 - Text input (not multiple choice) — the user types a path.
@@ -55,28 +61,28 @@ echo "$FREEZE_DIR"
 2. Ensure trailing slash and save to the freeze state file:
 ```bash
 FREEZE_DIR="${FREEZE_DIR%/}/"
-STATE_DIR="${CLAUDE_PLUGIN_DATA:-$HOME/.gstack}"
+STATE_DIR="${GEMINI_PLUGIN_DATA:-$HOME/.gstack}"
 mkdir -p "$STATE_DIR"
 echo "$FREEZE_DIR" > "$STATE_DIR/freeze-dir.txt"
 echo "Freeze boundary set: $FREEZE_DIR"
 ```
 
-Tell the user: "Edits are now restricted to `<path>/`. Any Edit or Write
+Tell the user: "Edits are now restricted to `<path>/`. Any replace or write_file
 outside this directory will be blocked. To change the boundary, run `/freeze`
 again. To remove it, run `/unfreeze` or end the session."
 
 ## How it works
 
-The hook reads `file_path` from the Edit/Write tool input JSON, then checks
+The hook reads `file_path` from the replace/write_file tool input JSON, then checks
 whether the path starts with the freeze directory. If not, it returns
 `permissionDecision: "deny"` to block the operation.
 
 The freeze boundary persists for the session via the state file. The hook
-script reads it on every Edit/Write invocation.
+script reads it on every replace/write_file invocation.
 
 ## Notes
 
 - The trailing `/` on the freeze directory prevents `/src` from matching `/src-old`
-- Freeze applies to Edit and Write tools only — Read, Bash, Glob, Grep are unaffected
-- This prevents accidental edits, not a security boundary — Bash commands like `sed` can still modify files outside the boundary
+- Freeze applies to replace and write_file tools only — read_file, run_shell_command, glob, grep_search are unaffected
+- This prevents accidental edits, not a security boundary — run_shell_command commands like `sed` can still modify files outside the boundary
 - To deactivate, run `/unfreeze` or end the conversation

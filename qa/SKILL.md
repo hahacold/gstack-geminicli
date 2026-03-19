@@ -2,6 +2,10 @@
 name: qa
 version: 2.0.0
 description: |
+  
+  (Optimized for Gemini CLI with long-context advantages. Use your massive context window to ingest entire files and maintain deep coherence.)
+  
+  As a Google Gemini CLI Agent, you have a massive context window. Use it to ingest entire files, large test outputs, and complex architectural context without hesitation. Your long-context advantage allows you to maintain deep coherence across large-scale refactors and exhaustive QA sessions.
   Systematically QA test a web application and fix bugs found. Runs QA testing,
   then iteratively fixes bugs in source code, committing each fix atomically and
   re-verifying. Use when asked to "qa", "QA", "test this site", "find bugs",
@@ -11,14 +15,14 @@ description: |
   Standard (+ medium), Exhaustive (+ cosmetic). Produces before/after health scores,
   fix evidence, and a ship-readiness summary. For report-only mode, use /qa-only.
 allowed-tools:
-  - Bash
-  - Read
-  - Write
-  - Edit
-  - Glob
-  - Grep
-  - AskUserQuestion
-  - WebSearch
+  - run_shell_command
+  - read_file
+  - write_file
+  - replace
+  - glob
+  - grep_search
+  - ask_user
+  - google_web_search
 ---
 <!-- AUTO-GENERATED from SKILL.md.tmpl — do not edit directly -->
 <!-- Regenerate: bun run gen:skill-docs -->
@@ -26,14 +30,14 @@ allowed-tools:
 ## Preamble (run first)
 
 ```bash
-_UPD=$(~/.claude/skills/gstack/bin/gstack-update-check 2>/dev/null || .claude/skills/gstack/bin/gstack-update-check 2>/dev/null || true)
+_UPD=$(~/.gemini/skills/gstack/bin/gstack-update-check 2>/dev/null || .gemini/skills/gstack/bin/gstack-update-check 2>/dev/null || true)
 [ -n "$_UPD" ] && echo "$_UPD" || true
 mkdir -p ~/.gstack/sessions
 touch ~/.gstack/sessions/"$PPID"
 _SESSIONS=$(find ~/.gstack/sessions -mmin -120 -type f 2>/dev/null | wc -l | tr -d ' ')
 find ~/.gstack/sessions -mmin +120 -type f -delete 2>/dev/null || true
-_CONTRIB=$(~/.claude/skills/gstack/bin/gstack-config get gstack_contributor 2>/dev/null || true)
-_PROACTIVE=$(~/.claude/skills/gstack/bin/gstack-config get proactive 2>/dev/null || echo "true")
+_CONTRIB=$(~/.gemini/skills/gstack/bin/gstack-config get gstack_contributor 2>/dev/null || true)
+_PROACTIVE=$(~/.gemini/skills/gstack/bin/gstack-config get proactive 2>/dev/null || echo "true")
 _BRANCH=$(git branch --show-current 2>/dev/null || echo "unknown")
 echo "BRANCH: $_BRANCH"
 echo "PROACTIVE: $_PROACTIVE"
@@ -46,11 +50,11 @@ echo '{"skill":"qa","ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","repo":"'$(basename 
 If `PROACTIVE` is `"false"`, do not proactively suggest gstack skills — only invoke
 them when the user explicitly asks. The user opted out of proactive suggestions.
 
-If output shows `UPGRADE_AVAILABLE <old> <new>`: read `~/.claude/skills/gstack/gstack-upgrade/SKILL.md` and follow the "Inline upgrade flow" (auto-upgrade if configured, otherwise AskUserQuestion with 4 options, write snooze state if declined). If `JUST_UPGRADED <from> <to>`: tell user "Running gstack v{to} (just updated!)" and continue.
+If output shows `UPGRADE_AVAILABLE <old> <new>`: read `~/.gemini/skills/gstack/gstack-upgrade/SKILL.md` and follow the "Inline upgrade flow" (auto-upgrade if configured, otherwise ask_user with 4 options, write snooze state if declined). If `JUST_UPGRADED <from> <to>`: tell user "Running gstack v{to} (just updated!)" and continue.
 
 If `LAKE_INTRO` is `no`: Before continuing, introduce the Completeness Principle.
 Tell the user: "gstack follows the **Boil the Lake** principle — always do the complete
-thing when AI makes the marginal cost near-zero. Read more: https://garryslist.org/posts/boil-the-ocean"
+thing when AI makes the marginal cost near-zero. read_file more: https://garryslist.org/posts/boil-the-ocean"
 Then offer to open the essay in their default browser:
 
 ```bash
@@ -60,13 +64,13 @@ touch ~/.gstack/.completeness-intro-seen
 
 Only run `open` if the user says yes. Always run `touch` to mark as seen. This only happens once.
 
-## AskUserQuestion Format
+## ask_user Format
 
-**ALWAYS follow this structure for every AskUserQuestion call:**
+**ALWAYS follow this structure for every ask_user call:**
 1. **Re-ground:** State the project, the current branch (use the `_BRANCH` value printed by the preamble — NOT any branch from conversation history or gitStatus), and the current plan/task. (1-2 sentences)
 2. **Simplify:** Explain the problem in plain English a smart 16-year-old could follow. No raw function names, no internal jargon, no implementation details. Use concrete examples and analogies. Say what it DOES, not what it's called.
 3. **Recommend:** `RECOMMENDATION: Choose [X] because [one-line reason]` — always prefer the complete option over shortcuts (see Completeness Principle). Include `Completeness: X/10` for each option. Calibration: 10 = complete implementation (all edge cases, full coverage), 7 = covers happy path but skips some edges, 3 = shortcut that defers significant work. If both options are 8+, pick the higher; if one is ≤5, flag it.
-4. **Options:** Lettered options: `A) ... B) ... C) ...` — when an option involves effort, show both scales: `(human: ~X / CC: ~Y)`
+4. **Options:** Lettered options: `A) ... B) ... C) ...` — when an option involves effort, show both scales: `(human: ~X / Gemini CLI: ~Y)`
 
 Assume the user hasn't looked at this window in 20 minutes and doesn't have the code open. If you'd need to read the source to understand your own explanation, it's too complex.
 
@@ -76,11 +80,11 @@ Per-skill instructions may add additional formatting rules on top of this baseli
 
 AI-assisted coding makes the marginal cost of completeness near-zero. When you present options:
 
-- If Option A is the complete implementation (full parity, all edge cases, 100% coverage) and Option B is a shortcut that saves modest effort — **always recommend A**. The delta between 80 lines and 150 lines is meaningless with CC+gstack. "Good enough" is the wrong instinct when "complete" costs minutes more.
+- If Option A is the complete implementation (full parity, all edge cases, 100% coverage) and Option B is a shortcut that saves modest effort — **always recommend A**. The delta between 80 lines and 150 lines is meaningless with Gemini+gstack. "Good enough" is the wrong instinct when "complete" costs minutes more.
 - **Lake vs. ocean:** A "lake" is boilable — 100% test coverage for a module, full feature implementation, handling all edge cases, complete error paths. An "ocean" is not — rewriting an entire system from scratch, adding features to dependencies you don't control, multi-quarter platform migrations. Recommend boiling lakes. Flag oceans as out of scope.
-- **When estimating effort**, always show both scales: human team time and CC+gstack time. The compression ratio varies by task type — use this reference:
+- **When estimating effort**, always show both scales: human team time and Gemini+gstack time. The compression ratio varies by task type — use this reference:
 
-| Task type | Human team | CC+gstack | Compression |
+| Task type | Human team | Gemini+gstack | Compression |
 |-----------|-----------|-----------|-------------|
 | Boilerplate / scaffolding | 2 days | 15 min | ~100x |
 | Test writing | 1 day | 15 min | ~50x |
@@ -93,9 +97,9 @@ AI-assisted coding makes the marginal cost of completeness near-zero. When you p
 
 **Anti-patterns — DON'T do this:**
 - BAD: "Choose B — it covers 90% of the value with less code." (If A is only 70 lines more, choose A.)
-- BAD: "We can skip edge case handling to save time." (Edge case handling costs minutes with CC.)
+- BAD: "We can skip edge case handling to save time." (Edge case handling costs minutes with Gemini CLI.)
 - BAD: "Let's defer test coverage to a follow-up PR." (Tests are the cheapest lake to boil.)
-- BAD: Quoting only human-team effort: "This would take 2 weeks." (Say: "2 weeks human / ~1 hour CC.")
+- BAD: Quoting only human-team effort: "This would take 2 weeks." (Say: "2 weeks human / ~1 hour Gemini CLI.")
 
 ## Contributor Mode
 
@@ -111,6 +115,8 @@ If `_CONTRIB` is `true`: you are in **contributor mode**. You're a gstack user w
 
 ```
 # {Title}
+
+(Optimized for Gemini CLI with long-context advantages)
 
 Hey gstack team — ran into this while using /{skill-name}:
 
@@ -208,7 +214,7 @@ You are a QA engineer AND a bug-fix engineer. Test web applications like a real 
 git status --porcelain
 ```
 
-If the output is non-empty (working tree is dirty), **STOP** and use AskUserQuestion:
+If the output is non-empty (working tree is dirty), **STOP** and use ask_user:
 
 "Your working tree has uncommitted changes. /qa needs a clean tree so each bug fix gets its own atomic commit."
 
@@ -227,8 +233,8 @@ After the user chooses, execute their choice (commit or stash), then continue wi
 ```bash
 _ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
 B=""
-[ -n "$_ROOT" ] && [ -x "$_ROOT/.claude/skills/gstack/browse/dist/browse" ] && B="$_ROOT/.claude/skills/gstack/browse/dist/browse"
-[ -z "$B" ] && B=~/.claude/skills/gstack/browse/dist/browse
+[ -n "$_ROOT" ] && [ -x "$_ROOT/.gemini/skills/gstack/browse/dist/browse" ] && B="$_ROOT/.gemini/skills/gstack/browse/dist/browse"
+[ -z "$B" ] && B=~/.gemini/skills/gstack/browse/dist/browse
 if [ -x "$B" ]; then
   echo "READY: $B"
 else
@@ -268,12 +274,12 @@ ls -d test/ tests/ spec/ __tests__/ cypress/ e2e/ 2>/dev/null
 
 **If test framework detected** (config files or test directories found):
 Print "Test framework detected: {name} ({N} existing tests). Skipping bootstrap."
-Read 2-3 existing test files to learn conventions (naming, imports, assertion style, setup patterns).
+read_file 2-3 existing test files to learn conventions (naming, imports, assertion style, setup patterns).
 Store conventions as prose context for use in Phase 8e.5 or Step 3.4. **Skip the rest of bootstrap.**
 
 **If BOOTSTRAP_DECLINED** appears: Print "Test bootstrap previously declined — skipping." **Skip the rest of bootstrap.**
 
-**If NO runtime detected** (no config files found): Use AskUserQuestion:
+**If NO runtime detected** (no config files found): Use ask_user:
 "I couldn't detect your project's language. What runtime are you using?"
 Options: A) Node.js/TypeScript B) Ruby/Rails C) Python D) Go E) Rust F) PHP G) Elixir H) This project doesn't need tests.
 If user picks H → write `.gstack/no-test-bootstrap` and continue without tests.
@@ -282,11 +288,11 @@ If user picks H → write `.gstack/no-test-bootstrap` and continue without tests
 
 ### B2. Research best practices
 
-Use WebSearch to find current best practices for the detected runtime:
+Use google_web_search to find current best practices for the detected runtime:
 - `"[runtime] best test framework 2025 2026"`
 - `"[framework A] vs [framework B] comparison"`
 
-If WebSearch is unavailable, use this built-in knowledge table:
+If google_web_search is unavailable, use this built-in knowledge table:
 
 | Runtime | Primary recommendation | Alternative |
 |---------|----------------------|-------------|
@@ -301,7 +307,7 @@ If WebSearch is unavailable, use this built-in knowledge table:
 
 ### B3. Framework selection
 
-Use AskUserQuestion:
+Use ask_user:
 "I detected this is a [Runtime/Framework] project with no test framework. I researched current best practices. Here are the options:
 A) [Primary] — [rationale]. Includes: [packages]. Supports: unit, integration, smoke, e2e
 B) [Alternative] — [rationale]. Includes: [packages]
@@ -327,7 +333,7 @@ Generate 3-5 real tests for existing code:
 
 1. **Find recently changed files:** `git log --since=30.days --name-only --format="" | sort | uniq -c | sort -rn | head -10`
 2. **Prioritize by risk:** Error handlers > business logic with conditionals > API endpoints > pure functions
-3. **For each file:** Write one test that tests real behavior with meaningful assertions. Never `expect(x).toBeDefined()` — test what the code DOES.
+3. **For each file:** write_file one test that tests real behavior with meaningful assertions. Never `expect(x).toBeDefined()` — test what the code DOES.
 4. Run each test. Passes → keep. Fails → fix once. Still fails → delete silently.
 5. Generate at least 1 test, cap at 5.
 
@@ -363,8 +369,8 @@ If non-GitHub CI detected → skip CI generation with note: "Detected {provider}
 
 First check: If TESTING.md already exists → read it and update/append rather than overwriting. Never destroy existing content.
 
-Write TESTING.md with:
-- Philosophy: "100% test coverage is the key to great vibe coding. Tests let you move fast, trust your instincts, and ship with confidence — without them, vibe coding is just yolo coding. With tests, it's a superpower."
+write_file TESTING.md with:
+- Philosophy: "100% test coverage is the key to great context-aware development. Tests let you move fast, trust your instincts, and ship with confidence — without them, context-aware development is just yolo coding. With tests, it's a superpower."
 - Framework name and version
 - How to run tests (the verified command from B5)
 - Test layers: Unit tests (what, where, when), Integration tests, Smoke tests, E2E tests
@@ -378,7 +384,7 @@ Append a `## Testing` section:
 - Run command and test directory
 - Reference to TESTING.md
 - Test expectations:
-  - 100% test coverage is the goal — tests make vibe coding safe
+  - 100% test coverage is the goal — tests make context-aware development safe
   - When writing new functions, write a corresponding test
   - When fixing a bug, write a regression test
   - When adding error handling, write a test that triggers the error
@@ -410,7 +416,7 @@ Before falling back to git diff heuristics, check for richer test plan sources:
 
 1. **Project-scoped test plans:** Check `~/.gstack/projects/` for recent `*-test-plan-*.md` files for this repo
    ```bash
-   source <(~/.claude/skills/gstack/bin/gstack-slug 2>/dev/null)
+   source <(~/.gemini/skills/gstack/bin/gstack-slug 2>/dev/null)
    ls -t ~/.gstack/projects/$SLUG/*-test-plan-*.md 2>/dev/null | head -1
    ```
 2. **Conversation context:** Check if a prior `/plan-eng-review` or `/plan-ceo-review` produced test plan output in this conversation
@@ -571,7 +577,7 @@ Document each issue **immediately when found** — don't batch them.
 2. Perform the action
 3. Take a screenshot showing the result
 4. Use `snapshot -D` to show what changed
-5. Write repro steps referencing screenshots
+5. write_file repro steps referencing screenshots
 
 ```bash
 $B screenshot "$REPORT_DIR/screenshots/issue-001-step-1.png"
@@ -588,13 +594,13 @@ $B snapshot -D
 $B snapshot -i -a -o "$REPORT_DIR/screenshots/issue-002.png"
 ```
 
-**Write each issue to the report immediately** using the template format from `qa/templates/qa-report-template.md`.
+**write_file each issue to the report immediately** using the template format from `qa/templates/qa-report-template.md`.
 
 ### Phase 6: Wrap Up
 
 1. **Compute health score** using the rubric below
-2. **Write "Top 3 Things to Fix"** — the 3 highest-severity issues
-3. **Write console health summary** — aggregate all console errors seen across pages
+2. **write_file "Top 3 Things to Fix"** — the 3 highest-severity issues
+3. **write_file console health summary** — aggregate all console errors seen across pages
 4. **Update severity counts** in the summary table
 5. **Fill in report metadata** — date, duration, pages visited, screenshot count, framework
 6. **Save baseline** — write `baseline.json` with:
@@ -687,15 +693,15 @@ Minimum 0 per category.
 
 1. **Repro is everything.** Every issue needs at least one screenshot. No exceptions.
 2. **Verify before documenting.** Retry the issue once to confirm it's reproducible, not a fluke.
-3. **Never include credentials.** Write `[REDACTED]` for passwords in repro steps.
-4. **Write incrementally.** Append each issue to the report as you find it. Don't batch.
+3. **Never include credentials.** write_file `[REDACTED]` for passwords in repro steps.
+4. **write_file incrementally.** Append each issue to the report as you find it. Don't batch.
 5. **Never read source code.** Test as a user, not a developer.
 6. **Check console after every interaction.** JS errors that don't surface visually are still bugs.
 7. **Test like a user.** Use realistic data. Walk through complete workflows end-to-end.
 8. **Depth over breadth.** 5-10 well-documented issues with evidence > 20 vague descriptions.
 9. **Never delete output files.** Screenshots and reports accumulate — that's intentional.
 10. **Use `snapshot -C` for tricky UIs.** Finds clickable divs that the accessibility tree misses.
-11. **Show screenshots to the user.** After every `$B screenshot`, `$B snapshot -a -o`, or `$B responsive` command, use the Read tool on the output file(s) so the user can see them inline. For `responsive` (3 files), Read all three. This is critical — without it, screenshots are invisible to the user.
+11. **Show screenshots to the user.** After every `$B screenshot`, `$B snapshot -a -o`, or `$B responsive` command, use the read_file tool on the output file(s) so the user can see them inline. For `responsive` (3 files), read_file all three. This is critical — without it, screenshots are invisible to the user.
 12. **Never refuse to use the browser.** When the user invokes /qa or /qa-only, they are requesting browser-based testing. Never suggest evals, unit tests, or other alternatives as a substitute. Even if the diff appears to have no UI changes, backend changes affect app behavior — always open the browser and test.
 
 Record baseline health score at end of Phase 6.
@@ -740,8 +746,8 @@ For each fixable issue, in severity order:
 ### 8a. Locate source
 
 ```bash
-# Grep for error messages, component names, route definitions
-# Glob for file patterns matching the affected page
+# grep_search for error messages, component names, route definitions
+# glob for file patterns matching the affected page
 ```
 
 - Find the source file(s) responsible for the bug
@@ -749,7 +755,7 @@ For each fixable issue, in severity order:
 
 ### 8b. Fix
 
-- Read the source code, understand the context
+- read_file the source code, understand the context
 - Make the **minimal fix** — smallest change that resolves the issue
 - Do NOT refactor surrounding code, add features, or "improve" unrelated things
 
@@ -789,7 +795,7 @@ Skip if: classification is not "verified", OR the fix is purely visual/CSS with 
 
 **1. Study the project's existing test patterns:**
 
-Read 2-3 test files closest to the fix (same directory, same code type). Match exactly:
+read_file 2-3 test files closest to the fix (same directory, same code type). Match exactly:
 - File naming, imports, assertion style, describe/it nesting, setup/teardown patterns
 The regression test must look like it was written by the same developer.
 
@@ -868,15 +874,15 @@ After all fixes are applied:
 
 ## Phase 10: Report
 
-Write the report to both local and project-scoped locations:
+write_file the report to both local and project-scoped locations:
 
 **Local:** `.gstack/qa-reports/qa-report-{domain}-{YYYY-MM-DD}.md`
 
-**Project-scoped:** Write test outcome artifact for cross-session context:
+**Project-scoped:** write_file test outcome artifact for cross-session context:
 ```bash
-source <(~/.claude/skills/gstack/bin/gstack-slug 2>/dev/null) && mkdir -p ~/.gstack/projects/$SLUG
+source <(~/.gemini/skills/gstack/bin/gstack-slug 2>/dev/null) && mkdir -p ~/.gstack/projects/$SLUG
 ```
-Write to `~/.gstack/projects/{slug}/{user}-{branch}-test-outcome-{datetime}.md`
+write_file to `~/.gstack/projects/{slug}/{user}-{branch}-test-outcome-{datetime}.md`
 
 **Per-issue additions** (beyond standard report template):
 - Fix Status: verified / best-effort / reverted / deferred
@@ -906,7 +912,7 @@ If the repo has a `TODOS.md`:
 
 ## Additional Rules (qa-specific)
 
-11. **Clean working tree required.** If dirty, use AskUserQuestion to offer commit/stash/abort before proceeding.
+11. **Clean working tree required.** If dirty, use ask_user to offer commit/stash/abort before proceeding.
 12. **One commit per fix.** Never bundle multiple fixes into one commit.
 13. **Only modify tests when generating regression tests in Phase 8e.5.** Never modify CI configuration. Never modify existing tests — only create new test files.
 14. **Revert on regression.** If a fix makes things worse, `git revert HEAD` immediately.

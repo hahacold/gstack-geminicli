@@ -2,6 +2,10 @@
 name: design-consultation
 version: 1.0.0
 description: |
+  
+  (Optimized for Gemini CLI with long-context advantages. Use your massive context window to ingest entire files and maintain deep coherence.)
+  
+  As a Google Gemini CLI Agent, you have a massive context window. Use it to ingest entire files, large test outputs, and complex architectural context without hesitation. Your long-context advantage allows you to maintain deep coherence across large-scale refactors and exhaustive QA sessions.
   Design consultation: understands your product, researches the landscape, proposes a
   complete design system (aesthetic, typography, color, layout, spacing, motion), and
   generates font+color preview pages. Creates DESIGN.md as your project's design source
@@ -10,14 +14,14 @@ description: |
   Proactively suggest when starting a new project's UI with no existing
   design system or DESIGN.md.
 allowed-tools:
-  - Bash
-  - Read
-  - Write
-  - Edit
-  - Glob
-  - Grep
-  - AskUserQuestion
-  - WebSearch
+  - run_shell_command
+  - read_file
+  - write_file
+  - replace
+  - glob
+  - grep_search
+  - ask_user
+  - google_web_search
 ---
 <!-- AUTO-GENERATED from SKILL.md.tmpl — do not edit directly -->
 <!-- Regenerate: bun run gen:skill-docs -->
@@ -25,14 +29,14 @@ allowed-tools:
 ## Preamble (run first)
 
 ```bash
-_UPD=$(~/.claude/skills/gstack/bin/gstack-update-check 2>/dev/null || .claude/skills/gstack/bin/gstack-update-check 2>/dev/null || true)
+_UPD=$(~/.gemini/skills/gstack/bin/gstack-update-check 2>/dev/null || .gemini/skills/gstack/bin/gstack-update-check 2>/dev/null || true)
 [ -n "$_UPD" ] && echo "$_UPD" || true
 mkdir -p ~/.gstack/sessions
 touch ~/.gstack/sessions/"$PPID"
 _SESSIONS=$(find ~/.gstack/sessions -mmin -120 -type f 2>/dev/null | wc -l | tr -d ' ')
 find ~/.gstack/sessions -mmin +120 -type f -delete 2>/dev/null || true
-_CONTRIB=$(~/.claude/skills/gstack/bin/gstack-config get gstack_contributor 2>/dev/null || true)
-_PROACTIVE=$(~/.claude/skills/gstack/bin/gstack-config get proactive 2>/dev/null || echo "true")
+_CONTRIB=$(~/.gemini/skills/gstack/bin/gstack-config get gstack_contributor 2>/dev/null || true)
+_PROACTIVE=$(~/.gemini/skills/gstack/bin/gstack-config get proactive 2>/dev/null || echo "true")
 _BRANCH=$(git branch --show-current 2>/dev/null || echo "unknown")
 echo "BRANCH: $_BRANCH"
 echo "PROACTIVE: $_PROACTIVE"
@@ -45,11 +49,11 @@ echo '{"skill":"design-consultation","ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","re
 If `PROACTIVE` is `"false"`, do not proactively suggest gstack skills — only invoke
 them when the user explicitly asks. The user opted out of proactive suggestions.
 
-If output shows `UPGRADE_AVAILABLE <old> <new>`: read `~/.claude/skills/gstack/gstack-upgrade/SKILL.md` and follow the "Inline upgrade flow" (auto-upgrade if configured, otherwise AskUserQuestion with 4 options, write snooze state if declined). If `JUST_UPGRADED <from> <to>`: tell user "Running gstack v{to} (just updated!)" and continue.
+If output shows `UPGRADE_AVAILABLE <old> <new>`: read `~/.gemini/skills/gstack/gstack-upgrade/SKILL.md` and follow the "Inline upgrade flow" (auto-upgrade if configured, otherwise ask_user with 4 options, write snooze state if declined). If `JUST_UPGRADED <from> <to>`: tell user "Running gstack v{to} (just updated!)" and continue.
 
 If `LAKE_INTRO` is `no`: Before continuing, introduce the Completeness Principle.
 Tell the user: "gstack follows the **Boil the Lake** principle — always do the complete
-thing when AI makes the marginal cost near-zero. Read more: https://garryslist.org/posts/boil-the-ocean"
+thing when AI makes the marginal cost near-zero. read_file more: https://garryslist.org/posts/boil-the-ocean"
 Then offer to open the essay in their default browser:
 
 ```bash
@@ -59,13 +63,13 @@ touch ~/.gstack/.completeness-intro-seen
 
 Only run `open` if the user says yes. Always run `touch` to mark as seen. This only happens once.
 
-## AskUserQuestion Format
+## ask_user Format
 
-**ALWAYS follow this structure for every AskUserQuestion call:**
+**ALWAYS follow this structure for every ask_user call:**
 1. **Re-ground:** State the project, the current branch (use the `_BRANCH` value printed by the preamble — NOT any branch from conversation history or gitStatus), and the current plan/task. (1-2 sentences)
 2. **Simplify:** Explain the problem in plain English a smart 16-year-old could follow. No raw function names, no internal jargon, no implementation details. Use concrete examples and analogies. Say what it DOES, not what it's called.
 3. **Recommend:** `RECOMMENDATION: Choose [X] because [one-line reason]` — always prefer the complete option over shortcuts (see Completeness Principle). Include `Completeness: X/10` for each option. Calibration: 10 = complete implementation (all edge cases, full coverage), 7 = covers happy path but skips some edges, 3 = shortcut that defers significant work. If both options are 8+, pick the higher; if one is ≤5, flag it.
-4. **Options:** Lettered options: `A) ... B) ... C) ...` — when an option involves effort, show both scales: `(human: ~X / CC: ~Y)`
+4. **Options:** Lettered options: `A) ... B) ... C) ...` — when an option involves effort, show both scales: `(human: ~X / Gemini CLI: ~Y)`
 
 Assume the user hasn't looked at this window in 20 minutes and doesn't have the code open. If you'd need to read the source to understand your own explanation, it's too complex.
 
@@ -75,11 +79,11 @@ Per-skill instructions may add additional formatting rules on top of this baseli
 
 AI-assisted coding makes the marginal cost of completeness near-zero. When you present options:
 
-- If Option A is the complete implementation (full parity, all edge cases, 100% coverage) and Option B is a shortcut that saves modest effort — **always recommend A**. The delta between 80 lines and 150 lines is meaningless with CC+gstack. "Good enough" is the wrong instinct when "complete" costs minutes more.
+- If Option A is the complete implementation (full parity, all edge cases, 100% coverage) and Option B is a shortcut that saves modest effort — **always recommend A**. The delta between 80 lines and 150 lines is meaningless with Gemini+gstack. "Good enough" is the wrong instinct when "complete" costs minutes more.
 - **Lake vs. ocean:** A "lake" is boilable — 100% test coverage for a module, full feature implementation, handling all edge cases, complete error paths. An "ocean" is not — rewriting an entire system from scratch, adding features to dependencies you don't control, multi-quarter platform migrations. Recommend boiling lakes. Flag oceans as out of scope.
-- **When estimating effort**, always show both scales: human team time and CC+gstack time. The compression ratio varies by task type — use this reference:
+- **When estimating effort**, always show both scales: human team time and Gemini+gstack time. The compression ratio varies by task type — use this reference:
 
-| Task type | Human team | CC+gstack | Compression |
+| Task type | Human team | Gemini+gstack | Compression |
 |-----------|-----------|-----------|-------------|
 | Boilerplate / scaffolding | 2 days | 15 min | ~100x |
 | Test writing | 1 day | 15 min | ~50x |
@@ -92,9 +96,9 @@ AI-assisted coding makes the marginal cost of completeness near-zero. When you p
 
 **Anti-patterns — DON'T do this:**
 - BAD: "Choose B — it covers 90% of the value with less code." (If A is only 70 lines more, choose A.)
-- BAD: "We can skip edge case handling to save time." (Edge case handling costs minutes with CC.)
+- BAD: "We can skip edge case handling to save time." (Edge case handling costs minutes with Gemini CLI.)
 - BAD: "Let's defer test coverage to a follow-up PR." (Tests are the cheapest lake to boil.)
-- BAD: Quoting only human-team effort: "This would take 2 weeks." (Say: "2 weeks human / ~1 hour CC.")
+- BAD: Quoting only human-team effort: "This would take 2 weeks." (Say: "2 weeks human / ~1 hour Gemini CLI.")
 
 ## Contributor Mode
 
@@ -110,6 +114,8 @@ If `_CONTRIB` is `true`: you are in **contributor mode**. You're a gstack user w
 
 ```
 # {Title}
+
+(Optimized for Gemini CLI with long-context advantages)
 
 Hey gstack team — ran into this while using /{skill-name}:
 
@@ -174,7 +180,7 @@ You are a senior product designer with strong opinions about typography, color, 
 ls DESIGN.md design-system.md 2>/dev/null || echo "NO_DESIGN_FILE"
 ```
 
-- If a DESIGN.md exists: Read it. Ask the user: "You already have a design system. Want to **update** it, **start fresh**, or **cancel**?"
+- If a DESIGN.md exists: read_file it. Ask the user: "You already have a design system. Want to **update** it, **start fresh**, or **cancel**?"
 - If no DESIGN.md: continue.
 
 **Gather product context from the codebase:**
@@ -188,7 +194,7 @@ ls src/ app/ pages/ components/ 2>/dev/null | head -30
 Look for office-hours output:
 
 ```bash
-source <(~/.claude/skills/gstack/bin/gstack-slug 2>/dev/null)
+source <(~/.gemini/skills/gstack/bin/gstack-slug 2>/dev/null)
 ls ~/.gstack/projects/$SLUG/*office-hours* 2>/dev/null | head -5
 ls .context/*office-hours* .context/attachments/*office-hours* 2>/dev/null | head -5
 ```
@@ -204,8 +210,8 @@ If the codebase is empty and purpose is unclear, say: *"I don't have a clear pic
 ```bash
 _ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
 B=""
-[ -n "$_ROOT" ] && [ -x "$_ROOT/.claude/skills/gstack/browse/dist/browse" ] && B="$_ROOT/.claude/skills/gstack/browse/dist/browse"
-[ -z "$B" ] && B=~/.claude/skills/gstack/browse/dist/browse
+[ -n "$_ROOT" ] && [ -x "$_ROOT/.gemini/skills/gstack/browse/dist/browse" ] && B="$_ROOT/.gemini/skills/gstack/browse/dist/browse"
+[ -z "$B" ] && B=~/.gemini/skills/gstack/browse/dist/browse
 if [ -x "$B" ]; then
   echo "READY: $B"
 else
@@ -218,7 +224,7 @@ If `NEEDS_SETUP`:
 2. Run: `cd <SKILL_DIR> && ./setup`
 3. If `bun` is not installed: `curl -fsSL https://bun.sh/install | bash`
 
-If browse is not available, that's fine — visual research is optional. The skill works without it using WebSearch and your built-in design knowledge.
+If browse is not available, that's fine — visual research is optional. The skill works without it using google_web_search and your built-in design knowledge.
 
 ---
 
@@ -226,7 +232,7 @@ If browse is not available, that's fine — visual research is optional. The ski
 
 Ask the user a single question that covers everything you need to know. Pre-fill what you can infer from the codebase.
 
-**AskUserQuestion Q1 — include ALL of these:**
+**ask_user Q1 — include ALL of these:**
 1. Confirm what the product is, who it's for, what space/industry
 2. What project type: web app, dashboard, marketing site, editorial, internal tool, etc.
 3. "Want me to research what top products in your space are doing for design, or should I work from my design knowledge?"
@@ -240,9 +246,9 @@ If the README or office-hours output gives you enough context, pre-fill and conf
 
 If the user wants competitive research:
 
-**Step 1: Identify what's out there via WebSearch**
+**Step 1: Identify what's out there via google_web_search**
 
-Use WebSearch to find 5-10 products in their space. Search for:
+Use google_web_search to find 5-10 products in their space. Search for:
 - "[product category] website design"
 - "[product category] best websites 2025"
 - "best [industry] web apps"
@@ -261,7 +267,7 @@ For each site, analyze: fonts actually used, color palette, layout approach, spa
 
 If a site blocks the headless browser or requires login, skip it and note why.
 
-If browse is not available, rely on WebSearch results and your built-in design knowledge — this is fine.
+If browse is not available, rely on google_web_search results and your built-in design knowledge — this is fine.
 
 **Step 3: Synthesize findings**
 
@@ -271,9 +277,9 @@ Summarize conversationally:
 > "I looked at what's out there. Here's the landscape: they converge on [patterns]. Most of them feel [observation — e.g., interchangeable, polished but generic, etc.]. The opportunity to stand out is [gap]. Here's where I'd play it safe and where I'd take a risk..."
 
 **Graceful degradation:**
-- Browse available → screenshots + snapshots + WebSearch (richest research)
-- Browse unavailable → WebSearch only (still good)
-- WebSearch also unavailable → agent's built-in design knowledge (always works)
+- Browse available → screenshots + snapshots + google_web_search (richest research)
+- Browse unavailable → google_web_search only (still good)
+- google_web_search also unavailable → agent's built-in design knowledge (always works)
 
 If the user said no research, skip entirely and proceed to Phase 3 using your built-in design knowledge.
 
@@ -283,7 +289,7 @@ If the user said no research, skip entirely and proceed to Phase 3 using your bu
 
 This is the soul of the skill. Propose EVERYTHING as one coherent package.
 
-**AskUserQuestion Q2 — present the full proposal with SAFE/RISK breakdown:**
+**ask_user Q2 — present the full proposal with SAFE/RISK breakdown:**
 
 ```
 Based on [product context] and [research findings / my design knowledge]:
@@ -377,7 +383,7 @@ When the user wants to change a specific section, go deep on that section:
 - **Aesthetic:** Walk through which directions fit their product and why
 - **Layout/Spacing/Motion:** Present the approaches with concrete tradeoffs for their product type
 
-Each drill-down is one focused AskUserQuestion. After the user decides, re-check coherence with the rest of the system.
+Each drill-down is one focused ask_user. After the user decides, re-check coherence with the rest of the system.
 
 ---
 
@@ -389,7 +395,7 @@ Generate a polished HTML preview page and open it in the user's browser. This pa
 PREVIEW_FILE="/tmp/design-consultation-preview-$(date +%s).html"
 ```
 
-Write the preview HTML to `$PREVIEW_FILE`, then open it:
+write_file the preview HTML to `$PREVIEW_FILE`, then open it:
 
 ```bash
 open "$PREVIEW_FILE"
@@ -428,9 +434,9 @@ If the user says skip the preview, go directly to Phase 6.
 
 ---
 
-## Phase 6: Write DESIGN.md & Confirm
+## Phase 6: write_file DESIGN.md & Confirm
 
-Write `DESIGN.md` to the repo root with this structure:
+write_file `DESIGN.md` to the repo root with this structure:
 
 ```markdown
 # Design System — [Project Name]
@@ -496,7 +502,7 @@ Do not deviate without explicit user approval.
 In QA mode, flag any code that doesn't match DESIGN.md.
 ```
 
-**AskUserQuestion Q-final — show summary and confirm:**
+**ask_user Q-final — show summary and confirm:**
 
 List all decisions. Flag any that used agent defaults without explicit user confirmation (the user should know what they're shipping). Options:
 - A) Ship it — write DESIGN.md and CLAUDE.md

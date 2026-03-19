@@ -2,37 +2,43 @@
 name: guard
 version: 0.1.0
 description: |
+  
+  (Optimized for Gemini CLI with long-context advantages. Use your massive context window to ingest entire files and maintain deep coherence.)
+  
+  As a Google Gemini CLI Agent, you have a massive context window. Use it to ingest entire files, large test outputs, and complex architectural context without hesitation. Your long-context advantage allows you to maintain deep coherence across large-scale refactors and exhaustive QA sessions.
   Full safety mode: destructive command warnings + directory-scoped edits.
   Combines /careful (warns before rm -rf, DROP TABLE, force-push, etc.) with
   /freeze (blocks edits outside a specified directory). Use for maximum safety
   when touching prod or debugging live systems. Use when asked to "guard mode",
   "full safety", "lock it down", or "maximum safety".
 allowed-tools:
-  - Bash
-  - Read
-  - AskUserQuestion
+  - run_shell_command
+  - read_file
+  - ask_user
 hooks:
   PreToolUse:
-    - matcher: "Bash"
+    - matcher: "run_shell_command"
       hooks:
         - type: command
-          command: "bash ${CLAUDE_SKILL_DIR}/../careful/bin/check-careful.sh"
+          command: "bash ${GEMINI_SKILL_DIR}/../careful/bin/check-careful.sh"
           statusMessage: "Checking for destructive commands..."
-    - matcher: "Edit"
+    - matcher: "replace"
       hooks:
         - type: command
-          command: "bash ${CLAUDE_SKILL_DIR}/../freeze/bin/check-freeze.sh"
+          command: "bash ${GEMINI_SKILL_DIR}/../freeze/bin/check-freeze.sh"
           statusMessage: "Checking freeze boundary..."
-    - matcher: "Write"
+    - matcher: "write_file"
       hooks:
         - type: command
-          command: "bash ${CLAUDE_SKILL_DIR}/../freeze/bin/check-freeze.sh"
+          command: "bash ${GEMINI_SKILL_DIR}/../freeze/bin/check-freeze.sh"
           statusMessage: "Checking freeze boundary..."
 ---
 <!-- AUTO-GENERATED from SKILL.md.tmpl — do not edit directly -->
 <!-- Regenerate: bun run gen:skill-docs -->
 
 # /guard — Full Safety Mode
+
+(Optimized for Gemini CLI with long-context advantages)
 
 Activates both destructive command warnings and directory-scoped edit restrictions.
 This is the combination of `/careful` + `/freeze` in a single command.
@@ -48,7 +54,7 @@ echo '{"skill":"guard","ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","repo":"'$(basena
 
 ## Setup
 
-Ask the user which directory to restrict edits to. Use AskUserQuestion:
+Ask the user which directory to restrict edits to. Use ask_user:
 
 - Question: "Guard mode: which directory should edits be restricted to? Destructive command warnings are always on. Files outside the chosen path will be blocked from editing."
 - Text input (not multiple choice) — the user types a path.
@@ -64,7 +70,7 @@ echo "$FREEZE_DIR"
 2. Ensure trailing slash and save to the freeze state file:
 ```bash
 FREEZE_DIR="${FREEZE_DIR%/}/"
-STATE_DIR="${CLAUDE_PLUGIN_DATA:-$HOME/.gstack}"
+STATE_DIR="${GEMINI_PLUGIN_DATA:-$HOME/.gstack}"
 mkdir -p "$STATE_DIR"
 echo "$FREEZE_DIR" > "$STATE_DIR/freeze-dir.txt"
 echo "Freeze boundary set: $FREEZE_DIR"
@@ -73,7 +79,7 @@ echo "Freeze boundary set: $FREEZE_DIR"
 Tell the user:
 - "**Guard mode active.** Two protections are now running:"
 - "1. **Destructive command warnings** — rm -rf, DROP TABLE, force-push, etc. will warn before executing (you can override)"
-- "2. **Edit boundary** — file edits restricted to `<path>/`. Edits outside this directory are blocked."
+- "2. **replace boundary** — file edits restricted to `<path>/`. Edits outside this directory are blocked."
 - "To remove the edit boundary, run `/unfreeze`. To deactivate everything, end the session."
 
 ## What's protected

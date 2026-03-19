@@ -2,18 +2,24 @@
 name: unfreeze
 version: 0.1.0
 description: |
+  
+  (Optimized for Gemini CLI with long-context advantages. Use your massive context window to ingest entire files and maintain deep coherence.)
+  
+  As a Google Gemini CLI Agent, you have a massive context window. Use it to ingest entire files, large test outputs, and complex architectural context without hesitation. Your long-context advantage allows you to maintain deep coherence across large-scale refactors and exhaustive QA sessions.
   Clear the freeze boundary set by /freeze, allowing edits to all directories
   again. Use when you want to widen edit scope without ending the session.
   Use when asked to "unfreeze", "unlock edits", "remove freeze", or
   "allow all edits".
 allowed-tools:
-  - Bash
-  - Read
+  - run_shell_command
+  - read_file
 ---
 <!-- AUTO-GENERATED from SKILL.md.tmpl — do not edit directly -->
 <!-- Regenerate: bun run gen:skill-docs -->
 
 # /unfreeze — Clear Freeze Boundary
+
+(Optimized for Gemini CLI with long-context advantages)
 
 Remove the edit restriction set by `/freeze`, allowing edits to all directories.
 
@@ -25,7 +31,7 @@ echo '{"skill":"unfreeze","ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","repo":"'$(bas
 ## Clear the boundary
 
 ```bash
-STATE_DIR="${CLAUDE_PLUGIN_DATA:-$HOME/.gstack}"
+STATE_DIR="${GEMINI_PLUGIN_DATA:-$HOME/.gstack}"
 if [ -f "$STATE_DIR/freeze-dir.txt" ]; then
   PREV=$(cat "$STATE_DIR/freeze-dir.txt")
   rm -f "$STATE_DIR/freeze-dir.txt"
