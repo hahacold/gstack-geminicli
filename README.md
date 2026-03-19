@@ -6,12 +6,12 @@ This is a port of the original [gstack](https://github.com/garrytan/gstack) (cre
 
 ## Why gstack-geminicli?
 
-By using Gemini 1.5 Pro with gstack-geminicli, you unlock the **2 Million Token context window**. 
+By leveraging the latest **Gemini 3.1 Pro** and **Gemini 3 Deep Think** models with gstack-geminicli, you unlock unparalleled reasoning capabilities alongside the massive **2 Million+ Token context window**. 
 
 While other agents struggle with large repositories, gstack-geminicli allows the agent to:
-- **Ingest entire modules and test suites** in a single pass.
-- **Maintain deep coherence** during complex, multi-file refactors.
-- **Perform exhaustive QA** across hundreds of files without losing context.
+- **Execute "Deep Think" workflows**: Reasoning through complex bug root causes before proposing fixes.
+- **Ingest entire modules and test suites**: Leveraging the next-gen context window to maintain absolute project coherence.
+- **Perform autonomous "Agentic" tasks**: Handling multi-step engineering cycles across hundreds of files with ease.
 
 ## Installation
 
