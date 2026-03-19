@@ -1,7 +1,7 @@
 {
-  "name": "gstack",
-  "version": "0.3.3",
-  "description": "Garry's Stack — Claude Code skills + fast headless browser. One repo, one install, entire AI engineering workflow.",
+  "name": "gstack-geminicli",
+  "version": "1.1.0",
+  "description": "gstack for Gemini CLI: High-performance agentic skills for automated QA, deep code review, and root-cause investigation.",
   "license": "MIT",
   "type": "module",
   "bin": {
@@ -40,7 +40,8 @@
     "playwright",
     "headless",
     "cli",
-    "claude",
+    "gemini",
+    "google-gemini",
     "ai-agent",
     "devtools"
   ],
