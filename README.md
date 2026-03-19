@@ -18,6 +18,7 @@ While other agents struggle with large repositories, gstack for Gemini allows th
 ### 1. Requirements
 - [Google Gemini CLI](https://github.com/google/gemini-cli) installed and authenticated.
 - [GitHub CLI (gh)](https://cli.github.com/) (recommended for PR and issue workflows).
+- **Shell Environment**: A Bash-compatible shell is required (native on macOS/Linux, or Git Bash/WSL on Windows).
 
 ### 2. Setup
 Clone this repository and link the skills to your Gemini CLI skills directory:
@@ -27,11 +28,16 @@ Clone this repository and link the skills to your Gemini CLI skills directory:
 git clone https://github.com/YOUR_USERNAME/gstack-port.git
 cd gstack-port
 
-# Install skills (automatically links all skills to ~/.gemini/skills)
-./setup-skills.sh # (Assuming a setup script is provided)
+# Link skills to Gemini CLI (Unix/macOS Example)
+mkdir -p ~/.gemini/skills
+ln -s $(pwd)/review ~/.gemini/skills/review
+# ... or copy the folders to ~/.gemini/skills/
 ```
 
-*(Note: Manual installation involves copying or symlinking each skill folder into `~/.gemini/skills/`.)*
+## Platform Support
+- **macOS**: Fully supported (tested on zsh/bash).
+- **Linux**: Fully supported.
+- **Windows**: Supported via **Git Bash**, **PowerShell** (with coreutils), or **WSL**.
 
 ## Key Skills Included
 
