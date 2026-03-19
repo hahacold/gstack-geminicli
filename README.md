@@ -1,4 +1,4 @@
-# gstack-geminicli
+# gstack for Gemini CLI
 
 **gstack-geminicli** is a collection of high-performance agentic "skills" designed to make AI-assisted development faster, safer, and more thorough. 
 
